@@ -9,7 +9,8 @@ impl Plugin for MouseStatePlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<MouseInputState>()
             .add_system(mouse_input_handler)
-            .add_system(mouse_chunk_pos); 
+            .add_system(mouse_chunk_pos) 
+            .add_system(cell_setter);
     }
 }
 #[derive(Default, Inspectable, Reflect)]
@@ -43,6 +44,16 @@ pub fn mouse_input_handler(
         let world_pos = ndc_to_world.project_point3(ndc.extend(-1.));
         let world_pos: Vec2 = world_pos.truncate();
         state.world_pos = world_pos;
+    }
+}
+
+fn cell_setter(
+    state: ResMut<MouseInputState>,
+    mut chunk: Query<&mut Chunk>,
+) {
+    if state.left_button_down {
+        let mut chunk = chunk.single_mut();
+        chunk.set(state.cell_coord);
     }
 }
 

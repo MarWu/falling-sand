@@ -48,14 +48,24 @@ impl Chunk {
         y * self.height + x
     }
 
+    pub fn set(&mut self, coords: Vec2) {
+        let index = self.index(coords.x as usize, coords.y as usize);
+        self.cells[index].element = Element::Sand;
+    }
+
     fn origin(&self) -> Vec2 {
         let origin = self.pos - Vec2::new(self.width as f32 * self.scale.x / 2., self.height as f32 * self.scale.y / 2.);
-        println!("self.pos: {}", self.pos);
-        println!("origin: {}", origin);
+        // println!("self.pos: {}", self.pos);
+        // println!("origin: {}", origin);
         origin
     }
 
     pub fn coord_from_world_pos(&self, world_pos: Vec2) -> Vec2 {
-        Vec2::new(world_pos.x - self.origin().x, - world_pos.y + self.origin().y)
+        let pixel_pos = Vec2::new(world_pos.x - self.origin().x, -(world_pos.y + self.origin().y));
+        (pixel_pos / self.scale).floor()
+    }
+
+    pub fn highlight_coord(&self, coords: Vec2) {
+
     }
 }

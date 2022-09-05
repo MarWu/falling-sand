@@ -7,6 +7,7 @@ use render::texture_updater;
 mod elements;
 mod cell;
 mod chunk;
+mod world;
 mod render;
 mod mouse_input;
 mod debug;
@@ -27,10 +28,14 @@ pub const BYTES_PER_PIXEL: usize = 4;
 
 fn setup(
     mut commands: Commands,
-    mut images: ResMut<Assets<Image>>,
 ) {
     commands.spawn_bundle(Camera2dBundle::default());
+}
 
+fn spawn_chunk(
+    mut commands: Commands,
+    mut images: ResMut<Assets<Image>>,
+) {
     let width = CHUNK_SIZE as u32;
     let height = CHUNK_SIZE as u32;
     let pos = Vec2::new(0., 0.);
