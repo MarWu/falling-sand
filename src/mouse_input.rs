@@ -1,7 +1,8 @@
-use bevy::{prelude::*, input::mouse::{MouseMotion, MouseButtonInput}, render::camera::CameraProjection};
+use bevy::{prelude::*, render::camera::CameraProjection};
 use bevy_inspector_egui::Inspectable;
 
 use crate::chunk::Chunk;
+use crate::world::World;
 
 pub struct MouseStatePlugin;
 
@@ -9,14 +10,15 @@ impl Plugin for MouseStatePlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<MouseInputState>()
             .add_system(mouse_input_handler)
-            .add_system(mouse_chunk_pos) 
-            .add_system(cell_setter);
+            // .add_system(mouse_chunk_pos) 
+            .add_system(draw_cell)
+        ;
     }
 }
+
 #[derive(Default, Inspectable, Reflect)]
 pub struct MouseInputState {
     pub left_button_down: bool,
-    // pub window_position: Vec2,
     pub world_pos: Vec2,
     pub cell_coord: Vec2,
 }
@@ -24,15 +26,10 @@ pub struct MouseInputState {
 pub fn mouse_input_handler(
     mut state: ResMut<MouseInputState>,
     mouse_button: Res<Input<MouseButton>>,
-    // mut cursor_moved: EventReader<CursorMoved>,
     cameras: Query<(&GlobalTransform, &OrthographicProjection), With<Camera>>,
     wnds: ResMut<Windows>,
 ) {
     state.left_button_down = mouse_button.pressed(MouseButton::Left);
-
-    // for event in cursor_moved.iter() {
-    //     state.window_position = event.position;
-    // }
 
     let (camera, camera_transform) = cameras.single();
     let wnd = wnds.get_primary().unwrap();
@@ -47,13 +44,13 @@ pub fn mouse_input_handler(
     }
 }
 
-fn cell_setter(
+fn draw_cell(
     state: ResMut<MouseInputState>,
-    mut chunk: Query<&mut Chunk>,
+    mut world: ResMut<World>,
+    chunks: Query<&mut Chunk>,
 ) {
     if state.left_button_down {
-        let mut chunk = chunk.single_mut();
-        chunk.set(state.cell_coord);
+        world.set_cell(state.world_pos, chunks);
     }
 }
 

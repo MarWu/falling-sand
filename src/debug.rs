@@ -10,6 +10,7 @@ impl Plugin for DebugPlugin {
         app.add_plugin(WorldInspectorPlugin::new())
             .register_inspectable::<Chunk>()
             .add_plugin(InspectorPlugin::<MouseInputState>::new())
+            .add_plugin(InspectorPlugin::<World>::new())
         ;
     }
 }
