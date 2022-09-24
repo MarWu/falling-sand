@@ -1,3 +1,5 @@
+use bevy::{prelude::*, render::{render_resource::{Extent3d, TextureFormat}, texture::ImageSampler}};
+
 pub fn key_from_coords(x: i32, y: i32) -> u64 {
     ((x as u64) << 32) | y as u64
 }
@@ -7,6 +9,21 @@ pub fn coords_from_key(key: u64) -> (i32, i32) {
     let y = key & 0xFFFFFFFF;
 
     (x as i32, y as i32)
+}
+
+pub fn create_chunk_image(width: u32, height: u32) -> Image {
+    let mut image = Image::new_fill(
+        Extent3d {
+            width,
+            height,
+            depth_or_array_layers: 1,
+        },
+        bevy::render::render_resource::TextureDimension::D2,
+        &[0, 255, 0, 255],
+        TextureFormat::Rgba8UnormSrgb,
+    );
+    image.sampler_descriptor = ImageSampler::nearest();
+    image
 }
 
 #[cfg(test)]

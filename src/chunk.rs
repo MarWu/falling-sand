@@ -6,9 +6,18 @@ use bevy::{
     },
 };
 
-use crate::{cell, elements::Element, CHUNK_SCALE, CHUNK_SIZE};
+use crate::{cell::{self, CellPos, CellBundle}, elements::Element, CHUNK_SCALE, CHUNK_SIZE, helper::create_chunk_image};
 use bevy_inspector_egui::Inspectable;
 use cell::Cell;
+
+#[derive(Bundle)]
+pub struct ChunkBundle {
+    chunk_pos: ChunkPos,
+    chunk_size: ChunkSize,
+    chunk_scale: ChunkScale,
+    texture_handle: ChunkTexture,
+    cell_storage: CellStorage,
+}
 
 #[derive(Component, Inspectable)]
 pub struct Chunk {
@@ -18,6 +27,64 @@ pub struct Chunk {
     scale: Vec2,
     pub cells: Vec<Cell>,
     pub image: Handle<Image>,
+}
+
+#[derive(Component)]
+pub struct ChunkPos {
+    x: i64,
+    y: i64,
+}
+
+#[derive(Component)]
+pub struct ChunkSize {
+    pub width: u32,
+    pub height: u32,
+}
+
+impl ChunkSize {
+    fn square(len: u32) -> Self {
+        Self { width: len, height: len }
+    }
+}
+
+impl From<u32> for ChunkSize {
+    fn from(len: u32) -> Self {
+        ChunkSize { width: len, height: len }
+    }
+}
+
+#[derive(Component)]
+pub struct ChunkScale(pub u64);
+
+#[derive(Component)]
+pub struct ChunkTexture(pub Handle<Image>);
+
+#[derive(Component)]
+pub struct CellStorage {
+    storage: Vec<Option<Entity>>,
+    size: ChunkSize,
+}
+
+impl CellStorage {
+    fn empty(size: ChunkSize) -> Self {
+        Self {
+            storage: vec![None; (size.width * size.height) as usize],
+            size,
+        }
+    }
+
+    fn set(&self, cell_pos: &CellPos, cell_entity: Option<Entity>) {
+        self.storage[cell_pos.index(self.size)] = cell_entity;
+    }
+}
+
+#[derive(Component, Clone, Copy, Debug, Hash)]
+pub struct ChunkId(pub Entity);
+
+impl Default for ChunkId {
+    fn default() -> Self {
+        Self(Entity::from_raw(0))
+    }
 }
 
 impl Chunk {
@@ -79,22 +146,28 @@ impl Chunk {
 }
 
 pub fn spawn_chunk(mut commands: Commands, mut images: ResMut<Assets<Image>>, pos: Vec2) -> Entity {
-    let width = CHUNK_SIZE as u32;
-    let height = CHUNK_SIZE as u32;
-    let scale = Vec2::new(CHUNK_SCALE as f32, CHUNK_SCALE as f32);
-    let mut image = Image::new_fill(
-        Extent3d {
-            width,
-            height,
-            depth_or_array_layers: 1,
-        },
-        bevy::render::render_resource::TextureDimension::D2,
-        &[0, 255, 0, 255],
-        TextureFormat::Rgba8UnormSrgb,
-    );
-    image.sampler_descriptor = ImageSampler::nearest();
+    let chunk_entity = commands.spawn().id();
+    let mut cell_storage = CellStorage::empty(CHUNK_SIZE.into());
+    let chunk_size = ChunkSize::square(CHUNK_SIZE);
+    
+    for x in 0..chunk_size.width {
+        for y in 0 ..chunk_size.height {
+            let cell_pos = CellPos { x, y };
+            let cell_entity = commands.spawn()
+                .insert_bundle(CellBundle {
+                    cell_pos,
+                    chunk_id: ChunkId(chunk_entity),
+                    ..Default::default()
+                })
+                .id();
+            commands.entity(chunk_entity).add_child(cell_entity);
+            cell_storage.set(&cell_pos, Some(cell_entity));
+        }
+    }
 
-    let image_handle = images.add(image);
+    // let scale = Vec2::new(CHUNK_SCALE as f32, CHUNK_SCALE as f32);
+    let image_handle = images.add(create_chunk_image(chunk_size.width as u32, chunk_size.height as u32));
+
 
     let mut chunk = Chunk::new(CHUNK_SIZE, CHUNK_SIZE, pos, scale, image_handle.clone());
     chunk.set_floor();
