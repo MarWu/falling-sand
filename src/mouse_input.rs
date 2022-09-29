@@ -54,10 +54,10 @@ fn draw_cell(
     }
 }
 
-fn mouse_chunk_pos(
-    mut state: ResMut<MouseInputState>,
-    chunk: Query<&Chunk>,
-) {
-    let chunk = chunk.single();
-    state.cell_coord = chunk.coord_from_world_pos(state.world_pos);
-}
+// fn mouse_chunk_pos(
+//     mut state: ResMut<MouseInputState>,
+//     chunk: Query<&Chunk>,
+// ) {
+//     let chunk = chunk.single();
+//     state.cell_coord = chunk.coord_from_world_pos(state.world_pos);
+// }

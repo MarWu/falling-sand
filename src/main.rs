@@ -27,8 +27,8 @@ fn main() {
         .run();
 }
 
-pub const CHUNK_SIZE: usize = 128;
-pub const CHUNK_SCALE: usize = 3;
+pub const CHUNK_SIZE: usize = 50;
+pub const CHUNK_SCALE: usize = 5;
 pub const BYTES_PER_PIXEL: usize = 4;
 
 fn setup(mut commands: Commands) {

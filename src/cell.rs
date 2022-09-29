@@ -7,3 +7,7 @@ use crate::elements::Element;
 pub struct Cell {
     pub element: Element,
 }
+
+impl Cell {
+    pub fn new(element: Element) -> Self { Self { element } }
+}
