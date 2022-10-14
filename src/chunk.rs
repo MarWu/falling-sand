@@ -6,7 +6,11 @@ use bevy::{
     },
 };
 
-use crate::{cell, elements::Element, CHUNK_SCALE, CHUNK_SIZE};
+use crate::{
+    cell::{self, CellBundle, CellParent, CellPos},
+    elements::Element,
+    CHUNK_SCALE, CHUNK_SIZE, cell_storage::CellStorage,
+};
 use bevy_inspector_egui::Inspectable;
 use cell::Cell;
 
@@ -16,21 +20,24 @@ pub struct Chunk {
     pub height: usize,
     pub pos: IVec2,
     scale: UVec2,
-    pub cells: Vec<Option<Cell>>,
+    pub cells: Vec<Option<Entity>>,
     pub image: Handle<Image>,
 }
 
 impl Chunk {
-    pub fn new(width: usize, height: usize, pos: IVec2, scale: UVec2, image: Handle<Image>) -> Self {
+    pub fn new(
+        width: usize,
+        height: usize,
+        pos: IVec2,
+        scale: UVec2,
+        image: Handle<Image>,
+    ) -> Self {
         Chunk {
             width: CHUNK_SIZE,
             height: CHUNK_SIZE,
             pos,
             scale,
-            cells: vec![
-                None;
-                width * height
-            ],
+            cells: vec![None; width * height],
             image,
         }
     }
@@ -47,9 +54,9 @@ impl Chunk {
         // y * self.height + x
     }
 
-    pub fn set(&mut self, coords: IVec2) {
+    pub fn set(&mut self, coords: IVec2, cell: Entity) {
         let index = self.index(coords.x as usize, coords.y as usize);
-        self.cells[index] = Some(Cell::new(Element::Sand));
+        self.cells[index] = Some(cell);
     }
 
     pub fn swap(&mut self, a: usize, b: usize) {
@@ -68,6 +75,18 @@ impl Chunk {
     }
 }
 
+#[derive(Component, Debug)]
+pub struct ChunkSize {
+    pub x: u32,
+    pub y: u32,
+}
+
+impl ChunkSize {
+    pub fn count(&self) -> usize {
+        (self.x * self.y) as usize
+    }
+}
+
 pub fn spawn_chunk(
     commands: &mut Commands,
     images: &mut ResMut<Assets<Image>>,
@@ -76,6 +95,7 @@ pub fn spawn_chunk(
     let width = CHUNK_SIZE as u32;
     let height = CHUNK_SIZE as u32;
     let scale = UVec2::new(CHUNK_SCALE as u32, CHUNK_SCALE as u32);
+    // Create Image
     let mut image = Image::new_fill(
         Extent3d {
             width,
@@ -87,21 +107,43 @@ pub fn spawn_chunk(
         TextureFormat::Rgba8UnormSrgb,
     );
     image.sampler_descriptor = ImageSampler::nearest();
-
     let image_handle = images.add(image);
 
+    // Create chunk
     let mut chunk = Chunk::new(CHUNK_SIZE, CHUNK_SIZE, pos, scale, image_handle.clone());
-    let entity = commands.spawn().insert(chunk).id();
+    // let chunk_entity = commands.spawn().insert(chunk).id();
+    let chunk_entity = commands.spawn().id();
+    let cell_storage = CellStorage::empty(ChunkSize { x: width, y: height });
+    for x in 0..width {
+        for y in 0..height {
+            let cell_pos = CellPos { x, y };
+            let cell_entity = commands
+                .spawn()
+                .insert_bundle(CellBundle {
+                    pos: cell_pos,
+                    parent_chunk: CellParent(chunk_entity),
+                    element: Element::Sand,
+                })
+                .id();
+            commands.entity(chunk_entity).add_child(cell_entity);
+            cell_storage.set(&cell_pos, cell_entity);
+        }
+    }
 
+    // Spawn Sprite
     commands.spawn().insert_bundle(SpriteBundle {
         texture: image_handle,
         transform: Transform {
-            translation: Vec3::new((pos.x * width as i32 * scale.x as i32) as f32, (pos.y * height as i32 * scale.y as i32) as f32, 0.),
+            translation: Vec3::new(
+                (pos.x * width as i32 * scale.x as i32) as f32,
+                (pos.y * height as i32 * scale.y as i32) as f32,
+                0.,
+            ),
             scale: Vec3::new(scale.x as f32, scale.y as f32, 1.),
             ..Default::default()
         },
         ..Default::default()
     });
 
-    entity
+    chunk_entity
 }

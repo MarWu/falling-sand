@@ -1,6 +1,7 @@
+use bevy::prelude::*;
 use bevy_inspector_egui::Inspectable;
 
-#[derive(Default, Inspectable, Clone, PartialEq)]
+#[derive(Component, Default, Inspectable, Clone, PartialEq)]
 pub enum Element {
     #[default] Air,
     Sand,

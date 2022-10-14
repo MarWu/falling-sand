@@ -14,6 +14,7 @@ mod render;
 mod physics;
 mod world;
 mod helper;
+mod cell_storage;
 
 fn main() {
     App::new()

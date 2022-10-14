@@ -1,11 +1,10 @@
-use bevy::{
-    prelude::*,
-    utils::HashSet,
-};
+use bevy::{prelude::*, utils::HashSet};
 
 use crate::{
+    cell::{CellBundle, CellPos, CellParent},
     chunk::{self, Chunk},
-    CHUNK_SCALE, CHUNK_SIZE, helper::world_pos_to_coords,
+    helper::world_pos_to_coords,
+    CHUNK_SCALE, CHUNK_SIZE,
 };
 
 pub struct WorldPlugin;
@@ -36,7 +35,7 @@ fn spawn_chunks_around_camera(
 ) {
     let transform = camera_query.single();
     let camera_chunk_pos = camera_pos_to_chunk_pos(&transform.translation.truncate());
-    for y in (camera_chunk_pos.y - 0)..(camera_chunk_pos.y + 2) {
+    for y in (camera_chunk_pos.y - 1)..(camera_chunk_pos.y + 2) {
         for x in (camera_chunk_pos.x - 1)..(camera_chunk_pos.x + 2) {
             if !world.chunks.contains(&IVec2::new(x, y)) {
                 world.chunks.insert(IVec2::new(x, y));
@@ -67,13 +66,25 @@ impl World {
         }
     }
 
-    pub fn set_cell(&mut self, mut world_pos: Vec2, mut chunks: Query<&mut Chunk>) {
-        let (chunk_coord, chunk_pixel) = world_pos_to_coords(world_pos, self.chunk_size, self.scale);
+    pub fn set_cell(
+        &mut self,
+        commands: Commands,
+        mut world_pos: Vec2,
+        mut chunks: Query<&mut Chunk>,
+    ) {
+        let (chunk_coord, chunk_pixel) =
+            world_pos_to_coords(world_pos, self.chunk_size, self.scale);
 
         if self.chunks.contains(&chunk_coord) {
             for mut chunk in chunks.iter_mut() {
                 if chunk_coord == chunk.pos {
-                    chunk.set(chunk_pixel);
+                    let entity = commands
+                        .spawn_bundle(CellBundle {
+                            pos: CellPos::from(chunk_pixel),
+                            element: crate::elements::Element::Sand,
+                        })
+                        .id();
+                    chunk.set(chunk_pixel, entity);
                 }
             }
         }

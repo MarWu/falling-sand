@@ -45,12 +45,13 @@ pub fn mouse_input_handler(
 }
 
 fn draw_cell(
+    commands: Commands,
     state: ResMut<MouseInputState>,
     mut world: ResMut<World>,
     chunks: Query<&mut Chunk>,
 ) {
     if state.left_button_down {
-        world.set_cell(state.world_pos, chunks);
+        world.set_cell(commands, state.world_pos, chunks);
     }
 }
 

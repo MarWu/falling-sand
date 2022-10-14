@@ -8,9 +8,9 @@ pub struct DebugPlugin;
 impl Plugin for DebugPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(WorldInspectorPlugin::new())
-            .register_inspectable::<Chunk>()
-            .add_plugin(InspectorPlugin::<MouseInputState>::new())
-            .add_plugin(InspectorPlugin::<World>::new())
+            // .register_inspectable::<Chunk>()
+            // .add_plugin(InspectorPlugin::<MouseInputState>::new())
+            // .add_plugin(InspectorPlugin::<World>::new())
         ;
     }
 }
